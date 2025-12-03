@@ -1,6 +1,6 @@
 from django.shortcuts import get_object_or_404, redirect, render
-from django.http import HttpResponse
-from .models import Blog, Category
+from django.http import HttpResponse, HttpResponseRedirect
+from .models import Blog, Category, Comment
 from django.db.models import Q # for complex queries like OR operations
 
 # Create your views here.
@@ -28,7 +28,17 @@ def posts_by_category(request, category_id):
 
 def blogs(request, blog_slug):
     single_blog = get_object_or_404(Blog, slug=blog_slug, status='Published')
-    return render(request, 'blogs.html', {'single_blog': single_blog})
+    if request.method == "POST":
+        comment = Comment()
+        comment.user = request.user
+        comment.blog = single_blog
+        comment.comment = request.POST['comment']
+        comment.save()
+        return HttpResponseRedirect(request.path_info)
+
+    comments = Comment.objects.filter(blog=single_blog)
+    oomments_count = comments.count()
+    return render(request, 'blogs.html', {'single_blog': single_blog, "comments": comments,"oomments_count":oomments_count})
 
 def blog_search(request):
     keyword = request.GET.get('keyword') 
